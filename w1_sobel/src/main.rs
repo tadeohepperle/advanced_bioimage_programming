@@ -1,6 +1,4 @@
 use image::{io::Reader as ImageReader, ImageBuffer, Luma};
-use itertools::Itertools;
-use rayon::prelude::*;
 use std::{env, time::Instant};
 
 const SOBEL_X: [[f64; 3]; 3] = [[-1.0, -2.0, -1.0], [0.0, 0.0, 0.0], [1.0, 2.0, 1.0]];
@@ -30,24 +28,6 @@ fn main() {
         print_elapsed(&timer, "    Sobel done");
         output.save(output_image_path(&image_path)).unwrap();
     }
-    return;
-    // let img = ImageReader::open(image_file_path)
-    //     .unwrap()
-    //     .decode()
-    //     .unwrap()
-    //     .grayscale()
-    //     .to_luma8();
-
-    // let timer = Instant::now();
-
-    // let sobel_x: [[f64; 3]; 3] = [[-1.0, -2.0, -1.0], [0.0, 0.0, 0.0], [1.0, 2.0, 1.0]];
-    // let sobel_y: [[f64; 3]; 3] = [[-1.0, -2.0, -1.0], [0.0, 0.0, 0.0], [1.0, 2.0, 1.0]];
-    // println!("Operations start");
-
-    // let output = conv_3x3_with_sqrt(img, vec![sobel_x, sobel_y]);
-
-    // print_elapsed(&timer, "Operations done");
-    // output.save("output.jpg").unwrap();
 }
 
 fn sobel(img: &ImageBuffer<Luma<u8>, Vec<u8>>) -> ImageBuffer<Luma<u8>, Vec<u8>> {
@@ -75,7 +55,7 @@ fn conv_3x3(
             let p7 = img.get_pixel(x + 1, y - 1).0[0] as f64 * mask[2][0];
             let p8 = img.get_pixel(x + 1, y).0[0] as f64 * mask[2][1];
             let p9 = img.get_pixel(x + 1, y + 1).0[0] as f64 * mask[2][2];
-            let val: u8 = ((p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9) / 9.0).abs() as u8;
+            let val: u8 = (p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9).abs() as u8;
             output.put_pixel(x, y, Luma([val]));
         }
     }
@@ -95,7 +75,7 @@ fn add_images(
             let p1 = img1.get_pixel(x, y).0[0] as f64;
             let p2 = img2.get_pixel(x, y).0[0] as f64;
 
-            let val = (p1 * p1 + p2 * p2).sqrt();
+            let val = p1 + p2; //(p1 * p1 + p2 * p2).sqrt();
 
             output.put_pixel(x, y, Luma([val as u8]));
         }
