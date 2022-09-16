@@ -1,4 +1,4 @@
-# python index.py img/lizard.jpg
+# python python_with_rust.py img/lizard.jpg
 
 import subprocess
 import sys

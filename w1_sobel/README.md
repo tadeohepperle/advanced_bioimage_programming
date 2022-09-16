@@ -6,13 +6,13 @@ to build and use it in python, call:
 
 ```
 cargo build --release
-python index.py img/lizard.jpg img/house.jpg img/ball.jpg
+python python_with_rust.py img/lizard.jpg img/house.jpg img/ball.jpg
 ```
 
 Results:
 
 ```txt
-$ python index.py img/lizard.jpg img/house.jpg img/ball.jpg
+$ python python_with_rust.py img/lizard.jpg img/house.jpg img/ball.jpg
 img/lizard.jpg with size 4000x4000
     Sobel done: 361.625ms
 img/house.jpg with size 1920x1440
