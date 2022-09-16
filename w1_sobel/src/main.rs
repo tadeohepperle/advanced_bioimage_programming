@@ -12,7 +12,7 @@ fn main() {
         panic!("no argument for the image file supplied.")
     }
     let image_file_paths: Vec<&String> = args.iter().skip(1).collect();
-    println!("Images to read: {:?}", image_file_paths);
+    // println!("Images to read: {:?}", image_file_paths);
     for image_path in image_file_paths {
         let img = ImageReader::open(image_path)
             .unwrap()
