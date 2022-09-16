@@ -89,7 +89,7 @@ fn output_image_path(input_imag_path: &str) -> String {
     if parts.len() != 2 {
         panic!("path {input_imag_path} is invalid, contains too many dots, 2 expected");
     }
-    parts[0].to_owned() + "_sobel." + parts[1]
+    parts[0].to_owned() + "_sobel_rust." + parts[1]
 }
 
 fn print_elapsed(instant: &Instant, title: &str) {
