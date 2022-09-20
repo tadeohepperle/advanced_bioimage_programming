@@ -12,7 +12,6 @@ fn main() {
         panic!("no argument for the image file supplied.")
     }
     let image_file_paths: Vec<&String> = args.iter().skip(1).collect();
-    // println!("Images to read: {:?}", image_file_paths);
     for image_path in image_file_paths {
         let img = ImageReader::open(image_path)
             .unwrap()
@@ -23,8 +22,9 @@ fn main() {
         println!("{} with size {}x{}", image_path, img.width(), img.height());
 
         let timer = Instant::now();
-        // println!("    Sobel Operations start");
+
         let output = sobel(&img);
+
         print_elapsed(&timer, "    Sobel done");
         output.save(output_image_path(&image_path)).unwrap();
     }
@@ -59,7 +59,6 @@ fn conv_3x3(
             output.put_pixel(x, y, Luma([val]));
         }
     }
-
     return output;
 }
 

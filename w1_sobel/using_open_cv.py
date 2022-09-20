@@ -18,7 +18,8 @@ if __name__ == "__main__":
 
         gx = cv2.Sobel(img, cv2.CV_32F, 1, 0)
         gy = cv2.Sobel(img, cv2.CV_32F, 0, 1)
-        sobel_img = gx + gy
+        sobel_img = np.sqrt(np.multiply(gy, gy) +
+                            np.multiply(gx, gx))
 
         end = time.time()
         print(f"{image_path} with size {img.shape[0]}x{img.shape[1]}")

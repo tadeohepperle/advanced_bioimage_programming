@@ -38,11 +38,11 @@ Results:
 
 ```txt
 img/lizard.jpg with size 4000x4000
-    Sobel done: 31.27312660217285ms
+    Sobel done: 86.49826049804688ms
 img/house.jpg with size 1440x1920
-    Sobel done: 15.645742416381836ms
+    Sobel done: 18.620729446411133ms
 img/ball.jpg with size 169x200
-    Sobel done: 0.9815692901611328ms
+    Sobel done: 2.0127296447753906ms
 ```
 
 # way 3: using manual implementation of convolution in python:
