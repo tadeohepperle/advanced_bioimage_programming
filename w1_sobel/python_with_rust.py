@@ -5,7 +5,7 @@ import sys
 
 
 def generate_sobel_image(image_path):
-    subprocess.run(["target/release/w1_sobel.exe", image_path])
+    subprocess.run(["w1_sobel.exe", image_path])
 
 
 if __name__ == "__main__":

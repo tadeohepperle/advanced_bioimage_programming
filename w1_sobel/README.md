@@ -4,8 +4,16 @@ implemented in 3 different ways, using pure rust, using native open cv functions
 
 # way 1: using pure rust
 
+run compilation (only execute when changes to rust source code made)
+
 ```
 cargo build --release
+cp target/release/w1_sobel.exe w1_sobel.exe
+```
+
+run python script linking to the built executable:
+
+```
 python python_with_rust.py img/lizard.jpg img/house.jpg img/ball.jpg
 ```
 
