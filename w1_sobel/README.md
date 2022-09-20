@@ -1,6 +1,6 @@
 ## sobel filter using rust
 
-to build and use it in python, call:
+implemented in 3 different ways, using pure rust, using native open cv functions and using python with manual convolution.
 
 # way 1: using pure rust
 
@@ -12,7 +12,6 @@ python python_with_rust.py img/lizard.jpg img/house.jpg img/ball.jpg
 Results:
 
 ```txt
-$ python python_with_rust.py img/lizard.jpg img/house.jpg img/ball.jpg
 img/lizard.jpg with size 4000x4000
     Sobel done: 361.625ms
 img/house.jpg with size 1920x1440
@@ -30,10 +29,12 @@ python using_open_cv.py img/lizard.jpg img/house.jpg img/ball.jpg
 Results:
 
 ```txt
-$ python using_open_cv.py img/lizard.jpg img/house.jpg img/ball.jpg
-total time: 0.04682469367980957
-total time: 0.02669548988342285
-total time: 0.002001523971557617
+img/lizard.jpg with size 4000x4000
+    Sobel done: 31.27312660217285ms
+img/house.jpg with size 1440x1920
+    Sobel done: 15.645742416381836ms
+img/ball.jpg with size 169x200
+    Sobel done: 0.9815692901611328ms
 ```
 
 # way 3: using manual implementation of convolution in python:
@@ -45,8 +46,10 @@ python python_manual.py img/lizard.jpg img/house.jpg img/ball.jpg
 Results:
 
 ```txt
-$ python python_manual.py img/lizard.jpg img/house.jpg img/ball.jpg
-total time: 1.2843925952911377
-total time: 0.22237420082092285
-total time: 0.004999876022338867
+img/lizard.jpg with size 4000x4000
+    Sobel done: 1169.6667671203613ms
+img/house.jpg with size 1440x1920
+    Sobel done: 209.10310745239258ms
+img/ball.jpg with size 169x200
+    Sobel done: 4.987001419067383ms
 ```

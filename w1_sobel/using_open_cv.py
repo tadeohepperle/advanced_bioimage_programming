@@ -21,6 +21,7 @@ if __name__ == "__main__":
         sobel_img = gx + gy
 
         end = time.time()
-        print(f"total time: {end - start}")
+        print(f"{image_path} with size {img.shape[0]}x{img.shape[1]}")
+        print(f"    Sobel done: {(end - start)*1000}ms")
         cv2.imwrite(image_path.split(".")[
                     0] + "_sobel_open_cv_native.jpg", sobel_img)

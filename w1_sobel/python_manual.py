@@ -44,7 +44,8 @@ if __name__ == "__main__":
                         np.multiply(sobel_img_x, sobel_img_x))
 
         end = time.time()
-        print(f"total time: {end - start}")
+        print(f"{image_path} with size {img.shape[0]}x{img.shape[1]}")
+        print(f"    Sobel done: {(end - start)*1000}ms")
 
         cv2.imwrite(image_path.split(".")[0] + "_sobel_python.jpg", sobel_img)
 
