@@ -42,30 +42,27 @@ end
 ######################################################################################################
 
 function hugh_transform_accumulator_matrix(edge_img::Matrix{Gray{Float32}}, resolution::Tuple{Int,Int}=(32, 32), threshhold::Float32=Float32(0.8))
-    height, width = size(img_grey)
+    height, width = size(edge_img)
     ϕ_segements, r_segments = resolution
-    r_max = sqrt(2) * max(width, height) / 2
-    x_center = width ÷ 2
-    y_cetner = height ÷ 2
-    ϕ_sins::Array{Float32} = map(1:ϕ_segements) do ϕ
-        return sin(ϕ / ϕ_segements * 2 * pi)
+
+    ϕ_sins::Array{Float32} = map(1:ϕ_segements) do i
+        return sin(map_index_to_phi(i, ϕ_segements))
     end
-    ϕ_coss::Array{Float32} = map(1:ϕ_segements) do ϕ
-        return cos(ϕ / ϕ_segements * 2 * pi)
+    ϕ_coss::Array{Float32} = map(1:ϕ_segements) do i
+        return cos(map_index_to_phi(i, ϕ_segements))
     end
     # fill accumulator matrix
     acc_matrix = zeros(Int, resolution)
     maximum::Int = 0
+    wh = (width, height)
     for x in 1:width
         for y in 1:height
             val = edge_img[y, x]
             if val > threshhold
-                x_rel = x - x_center
-                y_rel = y - y_cetner
-                # formula: x cos(ϕ) + y cos(ϕ) = r
+                x_rel, y_rel = abs_pos_to_rel((x, y), wh)
                 for ϕ_index in 1:ϕ_segements
                     r = x_rel * ϕ_coss[ϕ_index] + y_rel * ϕ_sins[ϕ_index]
-                    r_index = floor(Int, (r + r_max) / (2 * r_max) * r_segments)
+                    r_index = map_r_to_index(r, r_segments, wh)
                     acc_matrix[ϕ_index, r_index] += 1
                     if acc_matrix[ϕ_index, r_index] > maximum
                         maximum = acc_matrix[ϕ_index, r_index]
@@ -85,37 +82,16 @@ end
 
 
 
-# tuples represent: Angle phi, Radius r, m, n
-function get_top_k_from_acc_matrix(acc_matrix::Array{Float32}, k::Int, img_dim::Tuple{Int,Int})::Array{Tuple{Float32,Float32,Float32,Float32}}
-
-    acc_matrix_dim = size(acc_matrix)
+# tuples represent: phi_index, r_index, value
+function get_top_k_from_acc_matrix(acc_matrix::Array{Float32}, k::Int)::Array{Tuple{Int,Int,Float32}}
     arr = [(Tuple(ind)[1], Tuple(ind)[2], val) for (ind, val) in pairs(acc_matrix)]
     list = []
     for (y, x, val) in arr
-        push!(list, (x, y, val))
+        push!(list, (y, x, val))
     end
     sort!(list, by=x -> x[3])
     top_k = list[length(list)-k+1:end]
-    (width, height) = img_dim
-    r_max = sqrt(2) * max(width, height) / 2
-    return map(top_k) do (p_i, r_i, _)
-
-        # reconstruct phi and r  from indexes
-        phi = Float32(p_i) * 2 * pi / acc_matrix_dim[1]
-        r = (Float32(r_i) * 2 * r_max / acc_matrix_dim[2]) - r_max
-        # finding one point on the line:
-        x_rel = sin(phi) * r
-        y_rel = cos(phi) * r
-        # finding a second point at (0,?):
-        # x*cos(phi) + y *sin(phi) = r   =>  if x == 0  =>   y = r / sin(phi) 
-        x2_rel = 0
-        n = y2_rel = r / sin(phi) # is n in y = mx+n
-        m = (y_rel - y2_rel) / (x_rel - x2_rel)
-
-        return (phi, r, m, n)
-    end
-
-
+    return top_k
 end
 
 
@@ -127,7 +103,7 @@ end
 function abs_pos_to_rel(xy::Tuple{Int,Int}, wh::Tuple{Int,Int})::Tuple{Int,Int}
     (w, h) = wh
     (x, y) = xy
-    return (x - w ÷ 2, y - h ÷ 2)
+    return (x - w ÷ 2, (y - h ÷ 2)) # flips the y
 end
 
 function rel_pos_to_abs(xy::Tuple{Int,Int}, wh::Tuple{Int,Int})::Tuple{Int,Int}
@@ -147,22 +123,22 @@ function rel_pos_and_angle_to_radius(xy::Tuple{Int,Int}, phi::Float64)
     return r
 end
 
-function map_phi_to_index(phi, phi_segements::Tuple{Int,Int})::Int
+function map_phi_to_index(phi, phi_segements::Int)::Int
     return ceil((phi % pi) / pi * phi_segements)
 end
 
-function map_index_to_phi(phi_index, phi_segements::Tuple{Int,Int})
+function map_index_to_phi(phi_index, phi_segements::Int)
     return phi_index / phi_segements * pi
 end
 
-function map_r_to_index(r, r_segements::Tuple{Int,Int}, wh::Tuple{Int,Int})::Int
+function map_r_to_index(r, r_segements::Int, wh::Tuple{Int,Int})::Int
     (w, h) = wh
     rmax = sqrt(w^2 + h^2)
     zero_to_one = (r + rmax) / (2 * rmax)
     return ceil(zero_to_one * r_segements)
 end
 
-function map_index_to_r(r_index, r_segements::Tuple{Int,Int}, wh::Tuple{Int,Int})::Int
+function map_index_to_r(r_index, r_segements::Int, wh::Tuple{Int,Int})
     (w, h) = wh
     rmax = sqrt(w^2 + h^2)
     return (r_index / r_segements * 2 * rmax) - rmax
