@@ -34,7 +34,7 @@ end
 function sobel(img_grey::Matrix{Gray{Float32}})::Matrix{Gray{Float32}}
     gx = sobelx(img_grey)
     gy = sobely(img_grey)
-    return gx .+ gy
+    return sqrt.((gx .^ 2) .+ (gy .^ 2))
 end
 
 ######################################################################################################
@@ -83,7 +83,7 @@ end
 
 
 # tuples represent: phi_index, r_index, value
-function get_top_k_from_acc_matrix(acc_matrix::Array{Float32}, k::Int)::Array{Tuple{Int,Int,Float32}}
+function top_k_from_acc_matrix(acc_matrix::Array{Float32}, k::Int)::Array{Tuple{Int,Int,Float32}}
     arr = [(Tuple(ind)[1], Tuple(ind)[2], val) for (ind, val) in pairs(acc_matrix)]
     list = []
     for (y, x, val) in arr
@@ -94,8 +94,18 @@ function get_top_k_from_acc_matrix(acc_matrix::Array{Float32}, k::Int)::Array{Tu
     return top_k
 end
 
-
-
+function top_k_line_params_from_acc_matrix(acc_matrix::Array{Float32}, k::Int, img_size::Tuple{Int,Int})
+    (h, w) = img_size
+    top_k = top_k_from_acc_matrix(acc_matrix, k)
+    params_list = map(top_k) do (phi_index, r_index, _)
+        phi = map_index_to_phi(phi_index, size(acc_matrix)[1])
+        r = map_index_to_r(r_index, size(acc_matrix)[2], (w, h)) + eps(Float32)
+        (m, n) = phi_and_r_to_m_and_n(phi, r)
+        @show phi, r, m, n
+        return (m, n)
+    end
+    return params_list
+end
 
 
 # Helper functions:
