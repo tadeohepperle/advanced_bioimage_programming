@@ -1,8 +1,10 @@
-using Images
+using Images, ImageDraw
 using Colors
 using StaticLint
 using Test
 
+
+draw!
 ######################################################################################################
 ######################################################################################################
 ######################################################################################################
@@ -44,13 +46,15 @@ end
 function hugh_transform_accumulator_matrix(edge_img::Matrix{Gray{Float32}}, resolution::Tuple{Int,Int}=(32, 32), threshhold::Float32=Float32(0.8))
     height, width = size(edge_img)
     ϕ_segements, r_segments = resolution
-
+    
     ϕ_sins::Array{Float32} = map(1:ϕ_segements) do i
         return sin(map_index_to_phi(i, ϕ_segements))
     end
+    
     ϕ_coss::Array{Float32} = map(1:ϕ_segements) do i
         return cos(map_index_to_phi(i, ϕ_segements))
     end
+
     # fill accumulator matrix
     acc_matrix = zeros(Int, resolution)
     maximum::Int = 0
@@ -75,7 +79,6 @@ function hugh_transform_accumulator_matrix(edge_img::Matrix{Gray{Float32}}, reso
     normalized_acc_matrix = map(acc_matrix) do e
         Float32(e) / Float32(maximum)
     end
-
 
     return normalized_acc_matrix
 end
@@ -107,7 +110,6 @@ function top_k_line_params_from_acc_matrix(acc_matrix::Array{Float32}, k::Int, i
     return params_list
 end
 
-
 # Helper functions:
 
 function abs_pos_to_rel(xy::Tuple{Int,Int}, wh::Tuple{Int,Int})::Tuple{Int,Int}
@@ -121,6 +123,8 @@ function rel_pos_to_abs(xy::Tuple{Int,Int}, wh::Tuple{Int,Int})::Tuple{Int,Int}
     (x, y) = xy
     return (x + w ÷ 2, y + h ÷ 2)
 end
+
+function non_maximum_suppression()
 
 
 """
