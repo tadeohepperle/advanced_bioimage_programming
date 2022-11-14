@@ -39,6 +39,63 @@ function sobel(img_grey::Matrix{Gray{Float32}})::Matrix{Gray{Float32}}
     return sqrt.((gx .^ 2) .+ (gy .^ 2))
 end
 
+function smoothx(img_grey::Matrix{Gray{Float32}})::Matrix{Gray{Float32}}
+    height, width = size(img_grey)
+    img2 = zeros(Gray{Float32}, height, width)
+    for j in 1:(width)
+        for i in 2:(height-1)
+            img2[i, j] = (img_grey[i-1, j] + 2 * img_grey[i, j] + img_grey[i+1, j]) / 4
+        end
+    end
+    return img2
+end
+
+function harris_corner_detector(im::Matrix{Gray{Float32}}, alpha, threshold)
+    is = smooth(img)
+    ix = sobelx(is)
+    iy = sobely(is)
+    A = ix .^ 2
+    B = iy .^ 2
+    C = ix .* iy
+    A̅ = smooth(A)
+    B̅ = smooth(B)
+    C̅ = smooth(C)
+    Q = ((A̅ .* B̅ - (C̅ .^ 2))) .- (alpha * (A̅ + B̅) .^ 2)
+
+    # create corner list:
+    Q_suppressed = non_maximum_suppression(Q)
+    corners = []
+    (h, w) = size(img)
+    for x in 1:w
+        for y in 1:h
+            val = Q_suppressed[y, x]
+            push!(corners, (x, y, val))
+        end
+    end
+    sort!(corners, by=x -> x[3])
+    # clean up neighbors
+
+    # TODO
+
+    return corners
+end
+
+
+function smoothy(img_grey::Matrix{Gray{Float32}})::Matrix{Gray{Float32}}
+    height, width = size(img_grey)
+    img2 = zeros(Gray{Float32}, height, width)
+    for j in 2:(width-1)
+        for i in 1:height
+            img2[i, j] = (img_grey[i, j-1] + 2 * img_grey[i, j] + img_grey[i, j+1]) / 4
+        end
+    end
+    return img2
+end
+
+function smooth(img_grey::Matrix{Gray{Float32}})::Matrix{Gray{Float32}}
+    return smoothy(smoothx(img_grey))
+end
+
 ######################################################################################################
 ######################################################################################################
 ######################################################################################################
@@ -82,6 +139,14 @@ function hugh_transform_accumulator_matrix(edge_img::Matrix{Gray{Float32}}, reso
 
     return normalized_acc_matrix
 end
+
+
+
+
+function hugh_transform_accumulator_matrix_for_circles(edge_img::Matrix{Gray{Float32}}, resolution::Tuple{Int,Int,Int}=(32, 32, 32), threshhold::Float32=Float32(0.8))
+    # TODO
+end
+
 
 
 # tuples represent: phi_index, r_index, value
@@ -140,11 +205,11 @@ end
 function non_maximum_suppression(matrix::Matrix)
     m2 = copy(matrix)
     (d1, d2) = size(matrix)
-    for i in 2:(d1-1)
-        for j in 2:(d2-1)
+    for i in 1:(d1)
+        for j in 1:(d2)
             maxi = 0
-            for a in -1:1
-                for b in -1:1
+            for a in (i == 1 ? 0 : -1):(i == d1 ? 0 : 1)
+                for b in (j == 1 ? 0 : -1):(j == d2 ? 0 : 1)
                     v = matrix[i+a, j+b]
                     if v > maxi
                         maxi = v
