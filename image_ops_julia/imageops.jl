@@ -381,3 +381,89 @@ function phi_and_r_to_m_and_n(phi::Number, r::Number)::Tuple{Number,Number}
     n = y1
     return (m, n)
 end
+
+# chamfer matching
+
+function distance_transform(img::Matrix{Gray{Float32}}; m_iterations=3)::Matrix{Float32}
+    """
+    assumes all entries in img are either 0.0 or 1.0. Only 1.0 values are considered to be edges
+    refrence: https://richarddzh.gitbooks.io/book1/content/chamfer_matching.html
+    """
+    (h, w) = size(img)
+
+    mask = [
+        5 4 3 4 5
+        4 2 1 2 4
+        3 1 0 1 3
+        4 2 1 2 4
+        5 4 3 4 5
+    ]
+
+    # initialize edge_arr
+    edge_arr = fill(255, h, w)
+    for x in 1:w
+        for y in 1:h
+            if img[y, x] >= 1.0
+                edge_arr[y, x] = 0
+            end
+        end
+    end
+
+    # go for m iterations:
+    for _ in 1:m_iterations
+        next_edge_arr = copy(edge_arr)
+        for x in 3:(w-2)
+            for y in 3:(h-2)
+                mi = 255
+                for i in -2:2
+                    for j in -2:2
+                        potential_value = edge_arr[y+j, x+i] + mask[i+3, j+3]
+                        if mi > potential_value
+                            mi = potential_value
+                        end
+                    end
+                end
+                next_edge_arr[y, x] = mi
+            end
+        end
+        edge_arr = next_edge_arr
+    end
+
+
+    return edge_arr / 255
+end
+
+function chamfer_score(candidate::Matrix{Gray{Float32}}, distance_image::Matrix{Float32})::Float32
+    @assert size(candidate) == size(distance_image)
+    (h, w) = size(distance_image)
+    dist_acc = 0.0
+    counter = 0
+    for x in 1:w
+        for y in 1:h
+            if candidate[y, x] >= 1.0
+                counter += 1
+                dist_acc += distance_image[y, x]
+            end
+        end
+    end
+    return Float32(dist_acc / counter)
+end
+
+function chamfer_matching(haystack::Matrix{Gray{Float32}}, needle::Matrix{Gray{Float32}}; step_size::NTuple{2,Int}=(10, 10), threshold=0.3)::Vector{Tuple{Int,Int,Float32}}
+    needle_dist_transform = distance_transform(needle, m_iterations=50)
+    step_x, step_y = step_size
+    hh, hw = size(haystack)
+    nh, nw = size(needle)
+    matching_positions::Vector{Tuple{Int,Int,Float32}} = []
+    for x in 1:step_x:(hw-nw)
+        for y in 1:step_y:(hh-nh)
+            slice = haystack[y:y+nh-1, x:x+nw-1]
+            @assert size(slice) == size(needle)
+            s = chamfer_score(slice, needle_dist_transform)
+            push!(matching_positions, (x, y, s))
+        end
+    end
+    filter!(x -> x[3] <= threshold, matching_positions)
+    sort!(matching_positions, by=x -> x[3])
+    return matching_positions
+end
