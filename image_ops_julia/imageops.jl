@@ -50,7 +50,7 @@ function smoothx(img_grey::Matrix{Gray{Float32}})::Matrix{Gray{Float32}}
     return img2
 end
 
-function harris_corner_detector(im::Matrix{Gray{Float32}}, alpha, threshold)
+function harris_corner_detector(img::Matrix{Gray{Float32}}; alpha=0.1, threshold=0.2, min_dist=5)
     is = smooth(img)
     ix = sobelx(is)
     iy = sobely(is)
@@ -69,15 +69,29 @@ function harris_corner_detector(im::Matrix{Gray{Float32}}, alpha, threshold)
     for x in 1:w
         for y in 1:h
             val = Q_suppressed[y, x]
-            push!(corners, (x, y, val))
+            if val > threshold
+                push!(corners, (x, y, val))
+            end
         end
     end
-    sort!(corners, by=x -> x[3])
+    sort!(corners, by=x -> -x[3])
+
     # clean up neighbors
-
-    # TODO
-
-    return corners
+    min_sq_dist = min_dist^2
+    good_corners = []
+    for (x, y) in corners
+        isgood = true
+        for (x2, y2) in good_corners
+            if (x2 - x)^2 + (y2 - y)^2 < min_sq_dist
+                isgood = false
+                break
+            end
+        end
+        if isgood
+            push!(good_corners, (x, y))
+        end
+    end
+    return good_corners
 end
 
 
@@ -118,8 +132,7 @@ function hugh_transform_accumulator_matrix(edge_img::Matrix{Gray{Float32}}, reso
     wh = (width, height)
     for x in 1:width
         for y in 1:height
-            val = edge_img[y, x]
-            if val > threshhold
+            if edge_img[y, x] > threshhold
                 x_rel, y_rel = abs_pos_to_rel((x, y), wh)
                 for ϕ_index in 1:ϕ_segements
                     r = x_rel * ϕ_coss[ϕ_index] + y_rel * ϕ_sins[ϕ_index]
@@ -143,8 +156,48 @@ end
 
 
 
-function hugh_transform_accumulator_matrix_for_circles(edge_img::Matrix{Gray{Float32}}, resolution::Tuple{Int,Int,Int}=(32, 32, 32), threshhold::Float32=Float32(0.8))
-    # TODO
+function hugh_transform_accumulator_matrix_for_circles(img::Matrix{Gray{Float32}}, resolution::Tuple{Int,Int,Int}=(32, 32, 32); threshhold::Float32=Float32(0.8))
+    """
+    paramters that specify a circle:
+    - center_x
+    - center_y
+    _ radius
+
+    So we can iterate over each center_x and center_y in a grid and calculate the radius very simply
+    """
+    acc_matrix = zeros(resolution)
+    maximum::Int = 0
+    (h, w) = size(img)
+
+    max_circle_size = sqrt(h^2 + w^2)
+
+    for x in 1:w
+        for y in 1:h
+            if img[y, x] > threshhold
+                for cx_index in 1:resolution[1]
+                    cx = cx_index * w / resolution[1]
+                    for cy_index in 1:resolution[2]
+                        cy = cy_index * h / resolution[2]
+                        dist = sqrt((x - cx)^2 + (y - cy)^2)
+                        dist = clamp(dist, 0, max_circle_size)
+                        # @show dist / max_circle_size * resolution[3] - eps(Float32)
+                        d_index = ceil(Int, dist / max_circle_size * (resolution[3] - 1) + eps(Float32))
+                        acc_matrix[cx_index, cy_index, d_index] += 1
+                        if acc_matrix[cx_index, cy_index, d_index] > maximum
+                            maximum = acc_matrix[cx_index, cy_index, d_index]
+                        end
+                    end
+                end
+            end
+
+        end
+    end
+
+    normalized_acc_matrix = map(acc_matrix) do e
+        Float32(e) / Float32(maximum)
+    end
+
+    return normalized_acc_matrix
 end
 
 
@@ -159,6 +212,33 @@ function top_k_from_acc_matrix(acc_matrix::Array{Float32}, k::Int)::Array{Tuple{
     sort!(list, by=x -> x[3])
     top_k = list[length(list)-k+1:end]
     return top_k
+end
+
+
+# tuples represent: phi_index, r_index, value
+function top_k_from_3d_acc_matrix(acc_matrix::Array{Float32}, k::Int)::Array{Tuple{Int,Int,Int,Float32}}
+    arr = [(Tuple(ind)[1], Tuple(ind)[2], Tuple(ind)[3], val) for (ind, val) in pairs(acc_matrix)]
+    list = []
+    for (y, x, z, val) in arr
+        push!(list, (y, x, z, val))
+    end
+    sort!(list, by=x -> -x[4])
+    top_k = list[1:k]
+    return top_k
+end
+
+function top_k_circles_from_acc_matrix(acc_matrix::Array{Float32}, k::Int, img_size::Tuple{Int,Int})
+    (h, w) = img_size
+    top_k = top_k_from_3d_acc_matrix(acc_matrix, k)
+    dims = size(acc_matrix)
+    max_circle_size = sqrt(h^2 + w^2)
+    params_list = map(top_k) do (x_index, y_index, r_index, _)
+        x = x_index / dims[1] * w
+        y = y_index / dims[2] * h
+        r = r_index / dims[3] * max_circle_size
+        return (x, y, r)
+    end
+    return params_list
 end
 
 function top_k_line_params_from_acc_matrix(acc_matrix::Array{Float32}, k::Int, img_size::Tuple{Int,Int})
