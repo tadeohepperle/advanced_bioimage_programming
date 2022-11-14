@@ -46,11 +46,11 @@ end
 function hugh_transform_accumulator_matrix(edge_img::Matrix{Gray{Float32}}, resolution::Tuple{Int,Int}=(32, 32), threshhold::Float32=Float32(0.8))
     height, width = size(edge_img)
     ϕ_segements, r_segments = resolution
-    
+
     ϕ_sins::Array{Float32} = map(1:ϕ_segements) do i
         return sin(map_index_to_phi(i, ϕ_segements))
     end
-    
+
     ϕ_coss::Array{Float32} = map(1:ϕ_segements) do i
         return cos(map_index_to_phi(i, ϕ_segements))
     end
@@ -84,7 +84,6 @@ function hugh_transform_accumulator_matrix(edge_img::Matrix{Gray{Float32}}, reso
 end
 
 
-
 # tuples represent: phi_index, r_index, value
 function top_k_from_acc_matrix(acc_matrix::Array{Float32}, k::Int)::Array{Tuple{Int,Int,Float32}}
     arr = [(Tuple(ind)[1], Tuple(ind)[2], val) for (ind, val) in pairs(acc_matrix)]
@@ -110,6 +109,20 @@ function top_k_line_params_from_acc_matrix(acc_matrix::Array{Float32}, k::Int, i
     return params_list
 end
 
+function line_params_from_acc_matrix(acc_matrix::Array{Float32}, threshold::Float32, img_size::Tuple{Int,Int})
+    (h, w) = img_size
+    arr = [(Tuple(ind)[1], Tuple(ind)[2], val) for (ind, val) in pairs(acc_matrix) if val > threshold]
+    params_list = map(arr) do (phi_index, r_index, _)
+        phi = map_index_to_phi(phi_index, size(acc_matrix)[1])
+        r = map_index_to_r(r_index, size(acc_matrix)[2], (w, h)) + eps(Float32)
+        (m, n) = phi_and_r_to_m_and_n(phi, r)
+        @show phi, r, m, n
+        return (m, n)
+    end
+    return params_list
+end
+
+
 # Helper functions:
 
 function abs_pos_to_rel(xy::Tuple{Int,Int}, wh::Tuple{Int,Int})::Tuple{Int,Int}
@@ -124,8 +137,53 @@ function rel_pos_to_abs(xy::Tuple{Int,Int}, wh::Tuple{Int,Int})::Tuple{Int,Int}
     return (x + w ÷ 2, y + h ÷ 2)
 end
 
-function non_maximum_suppression()
+function non_maximum_suppression(matrix::Matrix)
+    m2 = copy(matrix)
+    (d1, d2) = size(matrix)
+    for i in 2:(d1-1)
+        for j in 2:(d2-1)
+            maxi = 0
+            for a in -1:1
+                for b in -1:1
+                    v = matrix[i+a, j+b]
+                    if v > maxi
+                        maxi = v
+                    end
+                end
+            end
 
+            if matrix[i, j] != maxi
+                m2[i, j] = 0
+            end
+        end
+    end
+    return m2
+end
+
+function line_params_to_corner_points(params::Vector{Tuple{T,T}}) where {T<:Number}
+    """
+    For each pair of lines calculate the intersection point
+    """
+    points = []
+    for i in 1:length(params)
+        for j in (i+1):length(params)
+            # solve:  
+            # m1*x+n1 = m2*x+n2
+            # m1*x = m2*x+n2-n1
+            # m1*x-m2*x = n2-n1
+            # (m1-m2)*x = n2-n1
+            # x = (n2-n1) / (m1-m2)
+            x = (params[j][2] - params[i][2]) / (params[i][1] - params[j][1])
+            y = params[i][1] * x + params[i][2]
+            push!(points, (x, y))
+        end
+    end
+    return points
+end
+
+
+ex = [(1, 2), (3, 4), (0, 1), (8, 9)]
+line_params_to_corner_points(ex)
 
 """
 expects angle between 0 and pi
