@@ -443,7 +443,11 @@ function chamfer_score(candidate::Matrix{Gray{Float32}}, distance_image::Matrix{
             if candidate[y, x] >= 1.0
                 counter += 1
                 dist_acc += distance_image[y, x]
+            elseif candidate[y, x] <= 0.0
+                counter += 1
+                dist_acc -= distance_image[y, x]
             end
+
         end
     end
     return Float32(dist_acc / counter)
