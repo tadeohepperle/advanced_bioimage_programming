@@ -454,7 +454,7 @@ function chamfer_score(candidate::Matrix{Gray{Float32}}, distance_image::Matrix{
 end
 
 function chamfer_matching(haystack::Matrix{Gray{Float32}}, needle::Matrix{Gray{Float32}}; step_size::NTuple{2,Int}=(10, 10), threshold=0.3)::Vector{Tuple{Int,Int,Float32}}
-    needle_dist_transform = distance_transform(needle, m_iterations=50)
+    needle_dist_transform = distance_transform(needle, m_iterations=10)
     step_x, step_y = step_size
     hh, hw = size(haystack)
     nh, nw = size(needle)
