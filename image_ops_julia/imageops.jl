@@ -1,10 +1,8 @@
 using Images, ImageDraw
 using Colors
-using StaticLint
 using Test
 
 
-draw!
 ######################################################################################################
 ######################################################################################################
 ######################################################################################################
@@ -60,6 +58,7 @@ function harris_corner_detector(img::Matrix{Gray{Float32}}; alpha=0.1, threshold
     A̅ = smooth(A)
     B̅ = smooth(B)
     C̅ = smooth(C)
+
     Q = ((A̅ .* B̅ - (C̅ .^ 2))) .- (alpha * (A̅ + B̅) .^ 2)
 
     # create corner list:
@@ -74,6 +73,7 @@ function harris_corner_detector(img::Matrix{Gray{Float32}}; alpha=0.1, threshold
             end
         end
     end
+    print(length(corners))
     sort!(corners, by=x -> -x[3])
 
     # clean up neighbors
@@ -114,18 +114,16 @@ end
 ######################################################################################################
 ######################################################################################################
 
-function hugh_transform_accumulator_matrix(edge_img::Matrix{Gray{Float32}}, resolution::Tuple{Int,Int}=(32, 32), threshhold::Float32=Float32(0.8))
+function hough_transform_accumulator_matrix(edge_img::Matrix{Gray{Float32}}, resolution::Tuple{Int,Int}=(32, 32), threshhold::Float32=Float32(0.8))
     height, width = size(edge_img)
     ϕ_segements, r_segments = resolution
 
     ϕ_sins::Array{Float32} = map(1:ϕ_segements) do i
         return sin(map_index_to_phi(i, ϕ_segements))
     end
-
     ϕ_coss::Array{Float32} = map(1:ϕ_segements) do i
         return cos(map_index_to_phi(i, ϕ_segements))
     end
-
     # fill accumulator matrix
     acc_matrix = zeros(Int, resolution)
     maximum::Int = 0
@@ -156,7 +154,7 @@ end
 
 
 
-function hugh_transform_accumulator_matrix_for_circles(img::Matrix{Gray{Float32}}, resolution::Tuple{Int,Int,Int}=(32, 32, 32); threshhold::Float32=Float32(0.8))
+function hough_transform_accumulator_matrix_for_circles(img::Matrix{Gray{Float32}}, resolution::Tuple{Int,Int,Int}=(32, 32, 32); threshhold::Float32=Float32(0.8))
     """
     paramters that specify a circle:
     - center_x
@@ -471,3 +469,9 @@ function chamfer_matching(haystack::Matrix{Gray{Float32}}, needle::Matrix{Gray{F
     sort!(matching_positions, by=x -> x[3])
     return matching_positions
 end
+
+
+########################################################################################
+# Morphological Filters
+########################################################################################
+
