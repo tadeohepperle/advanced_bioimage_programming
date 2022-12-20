@@ -1,0 +1,33 @@
+{
+  "annotations": [
+    {
+      "ID": 1,
+      "Type": "pen",
+      "Name": "ndmctsgh_1_T1",
+      "Description": "",
+      "ShowLabel": true,
+      "Protein1": "E-Cadherin__",
+      "Protein2": "P63__",
+      "Protein3": "CK14__",
+      "Protein4": "CK5/6__",
+      "Protein5": "Diagonsis_",
+      "Length": 38,
+      "DiseaseType": "T1",
+      "Points": [
+        {
+          "X": "400.0,600.0,600.0,300.0",
+          "Y": "300.0,300.0,100.0,100.0"
+        }
+      ],
+      "Distance": null,
+      "x_max": 611.5622326606951,
+      "x_min": 456.29271585037003,
+      "y_max": 178.74795741714883,
+      "y_min": 40.17408757567591,
+      "Annotation_image": "annotation_img_1.bmp",
+      "Area": "1269213.69mm2"
+    }
+  ],
+  "index_annotation_img": 20,
+  "AI_ROI": []
+}
